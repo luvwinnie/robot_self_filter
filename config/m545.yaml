@@ -1,0 +1,37 @@
+use_rgb: false
+max_queue_size: 5
+
+invert: false
+min_sensor_dist: 5.0
+self_see_default_padding: 0.1 #0.05
+self_see_default_scale: 1.3
+keep_organized: true
+self_see_links:
+    - name: BASE
+    - name: CABIN
+    - name: ENDEFFECTOR
+    - name: DIPPER_2
+    - name: DIPPER_1
+    - name: BOOM
+    - name: LF_BEAM
+    - name: LF_BEARING
+    - name: LF_KNUCKLE
+    - name: LF_PARALLEL
+    - name: LF_SWIVEL
+    - name: LF_WHEEL
+    - name: LH_BEAM
+    - name: LH_KNUCKLE
+    - name: LH_OUTRIGGER
+    - name: LH_ROTATOR
+    - name: LH_WHEEL
+    - name: RF_BEAM
+    - name: RF_BEARING
+    - name: RF_KNUCKLE
+    - name: RF_PARALLEL
+    - name: RF_SWIVEL
+    - name: RF_WHEEL
+    - name: RH_BEAM
+    - name: RH_KNUCKLE
+    - name: RH_OUTRIGGER
+    - name: RH_ROTATOR
+    - name: RH_WHEEL

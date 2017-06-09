@@ -7,17 +7,17 @@
   <!-- Self filter node -->
   <node pkg="robot_self_filter" type="self_filter" name="self_filter_R" output="screen">
     <rosparam command="load" file="$(find robot_self_filter)/config/m545.yaml" />
-    <param name="cloud_in"                           value="/velodyne_pointsR"/>
-    <param name="cloud_out"                          value="/velodyne_pointsR_self_filtered"/>
+    <param name="cloud_in"                           value="/velodyne_points"/>
+    <param name="cloud_out"                          value="/velodyne_pointsL_self_filtered"/>
     <!-- <param name="sensor_frame"                       value="velodyneR_base_link"/> -->
   </node>
 
   <!-- Self filter node -->
-  <node pkg="robot_self_filter" type="self_filter" name="self_filter_L" output="screen">
+  <!-- <node pkg="robot_self_filter" type="self_filter" name="self_filter_L" output="screen">
     <rosparam command="load" file="$(find robot_self_filter)/config/m545.yaml" />
     <param name="cloud_in"                           value="/velodyne_pointsL"/>
     <param name="cloud_out"                          value="/velodyne_pointsL_self_filtered"/>
-    <!-- <param name="sensor_frame"                       value="velodyneL_base_link"/> -->
-  </node>
+    <param name="sensor_frame"                       value="velodyneL_base_link"/>
+  </node> -->
 
 </launch>

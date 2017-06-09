@@ -467,7 +467,7 @@ protected:
                 missing << " " << links[i].name;
                 continue;
             }
-            
+
             if (!(link->collision && link->collision->geometry))
             {
                 ROS_WARN("No collision geometry specified for link '%s'", links[i].name.c_str());
@@ -475,14 +475,14 @@ protected:
             }
 
 
-            typedef std::map<std::string, boost::shared_ptr<std::vector<boost::shared_ptr<Collision> > > > col_group;
-            col_group group = link->collision_groups;
-            boost::shared_ptr<std::vector<boost::shared_ptr<Collision>>> collisions;
-            for(col_group::iterator it = group.begin(); it != group.end(); ++it){
-                collisions = it->second;
-            }
-            for(unsigned int j = 0; j < collisions->size(); ++j){
-                shapes::Shape *shape = constructShape(collisions->operator[](j)->geometry.get());
+            typedef std::vector<boost::shared_ptr<Collision> > col_array;
+            col_array collisions = link->collision_array;
+            // std::vector<boost::shared_ptr<Collision> > collisions;
+            // for(col_group::iterator it = group.begin(); it != group.end(); ++it){
+            //     collisions = *it;
+            // }
+            for(unsigned int j = 0; j < collisions.size(); ++j){
+                shapes::Shape *shape = constructShape(collisions.operator[](j)->geometry.get());
 
                 if (!shape)
                 {
@@ -499,7 +499,7 @@ protected:
 
                     // collision models may have an offset, in addition to what TF gives
                     // so we keep it around
-                    sl.constTransf = urdfPose2TFTransform(collisions->operator[](j)->origin);
+                    sl.constTransf = urdfPose2TFTransform(collisions.operator[](j)->origin);
 
                     sl.body->setScale(links[i].scale);
                     sl.body->setPadding(links[i].padding);

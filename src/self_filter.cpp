@@ -51,8 +51,6 @@ public:
     nh_.param<std::string>("sensor_frame", sensor_frame_, std::string());
     nh_.param("use_rgb", use_rgb_, false);
     nh_.param("max_queue_size", max_queue_size_, 10);
-    nh_.param("cloud_in", sub_name_, std::string());
-    nh_.param("cloud_out", pub_name_, std::string());
     if (use_rgb_) 
     {
       self_filter_rgb_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
@@ -72,7 +70,7 @@ public:
     {
       self_filter_->getSelfMask()->getLinkNames(frames_);
     }
-    pointCloudPublisher_ = root_handle_.advertise<sensor_msgs::PointCloud2>(pub_name_, 1,
+    pointCloudPublisher_ = root_handle_.advertise<sensor_msgs::PointCloud2>("cloud_out", 1,
                                                                             connect_cb, connect_cb);
   }
     
@@ -110,12 +108,12 @@ private:
     if(frames_.empty())
     {
       ROS_DEBUG("No valid frames have been passed into the self filter. Using a callback that will just forward scans on.");
-      no_filter_sub_ = root_handle_.subscribe<sensor_msgs::PointCloud2>(sub_name_, 1, boost::bind(&SelfFilter::noFilterCallback, this, _1));
+      no_filter_sub_ = root_handle_.subscribe<sensor_msgs::PointCloud2>("cloud_in", 1, boost::bind(&SelfFilter::noFilterCallback, this, _1));
     }
     else
     {
       ROS_DEBUG("Valid frames were passed in. We'll filter them.");
-      sub_.subscribe(root_handle_, sub_name_, max_queue_size_);
+      sub_.subscribe(root_handle_, "cloud_in", max_queue_size_);
       mn_.reset(new tf::MessageFilter<sensor_msgs::PointCloud2>(sub_, tf_, "", max_queue_size_));
       mn_->setTargetFrames(frames_);
       mn_->registerCallback(boost::bind(&SelfFilter::cloudCallback, this, _1));
@@ -185,8 +183,6 @@ private:
   filters::SelfFilter<pcl::PointXYZ> *self_filter_;
   filters::SelfFilter<pcl::PointXYZRGB> *self_filter_rgb_;
   std::string sensor_frame_;
-  std::string sub_name_;
-  std::string pub_name_;
   bool use_rgb_;
   bool subscribing_;
   std::vector<std::string> frames_;

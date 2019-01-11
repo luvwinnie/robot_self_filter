@@ -437,11 +437,11 @@ protected:
         sensor_pos_.setValue(0, 0, 0);
 
         std::string content;
-        std::shared_ptr<urdf::Model> urdfModel;
+        ModelSharedPtr urdfModel;
 
         if (nh_.getParam("robot_description", content))
         {
-            urdfModel = std::shared_ptr<urdf::Model>(new urdf::Model());
+            urdfModel = ModelSharedPtr(new urdf::Model());
             if (!urdfModel->initString(content))
             {
                 ROS_ERROR("Unable to parse URDF description!");
@@ -475,9 +475,9 @@ protected:
             }
 
 
-            typedef std::vector<std::shared_ptr<Collision> > col_array;
+            typedef std::vector<CollisionSharedPtr > col_array;
             col_array collisions = link->collision_array;
-            // std::vector<std::shared_ptr<Collision> > collisions;
+            // std::vector<CollisionSharedPtr> > collisions;
             // for(col_group::iterator it = group.begin(); it != group.end(); ++it){
             //     collisions = *it;
             // }

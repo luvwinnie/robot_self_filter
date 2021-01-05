@@ -30,7 +30,7 @@
 #ifndef FILTERS_SELF_SEE_H_
 #define FILTERS_SELF_SEE_H_
 
-#include <filters/filter_base.h>
+#include <filters/filter_base.hpp>
 #include <robot_self_filter/self_mask.h>
 #include <ros/console.h>
 
@@ -44,7 +44,7 @@ namespace filters
 template <typename PointT>
 class SelfFilter: public FilterBase <pcl::PointCloud<PointT> >
 {
-    
+
 public:
   typedef pcl::PointCloud<PointT> PointCloud;
   /** \brief Construct the filter */
@@ -55,26 +55,26 @@ public:
     nh_.param<double>("self_see_default_padding", default_padding, .01);
     nh_.param<double>("self_see_default_scale", default_scale, 1.0);
     nh_.param<bool>("keep_organized", keep_organized_, false);
-    std::vector<robot_self_filter::LinkInfo> links;	
+    std::vector<robot_self_filter::LinkInfo> links;
     std::string link_names;
-    
+
     if(!nh_.hasParam("self_see_links")) {
       ROS_WARN("No links specified for self filtering.");
-    } else {     
+    } else {
 
       XmlRpc::XmlRpcValue ssl_vals;;
-      
+
       nh_.getParam("self_see_links", ssl_vals);
       if(ssl_vals.getType() != XmlRpc::XmlRpcValue::TypeArray) {
         ROS_WARN("Self see links need to be an array");
-        
+
       } else {
         if(ssl_vals.size() == 0) {
           ROS_WARN("No values in self see links array");
         } else {
           for(int i = 0; i < ssl_vals.size(); i++) {
             robot_self_filter::LinkInfo li;
-            
+
             if(ssl_vals[i].getType() != XmlRpc::XmlRpcValue::TypeStruct) {
               ROS_WARN("Self see links entry %d is not a structure.  Stopping processing of self see links",i);
               break;
@@ -82,7 +82,7 @@ public:
             if(!ssl_vals[i].hasMember("name")) {
               ROS_WARN("Self see links entry %d has no name.  Stopping processing of self see links",i);
               break;
-            } 
+            }
             li.name = std::string(ssl_vals[i]["name"]);
             if(!ssl_vals[i].hasMember("padding")) {
               ROS_DEBUG("Self see links entry %d has no padding.  Assuming default padding of %g",i,default_padding);
@@ -98,30 +98,30 @@ public:
             }
             links.push_back(li);
           }
-        }      
+        }
       }
     }
     sm_ = new robot_self_filter::SelfMask<PointT>(tf_, links);
     if (!sensor_frame_.empty())
       ROS_INFO("Self filter is removing shadow points for sensor in frame '%s'. Minimum distance to sensor is %f.", sensor_frame_.c_str(), min_sensor_dist_);
   }
-    
+
   /** \brief Destructor to clean up
    */
   virtual ~SelfFilter(void)
   {
     delete sm_;
   }
-  
+
   virtual bool configure(void)
   {
     // keep only the points that are outside of the robot
     // for testing purposes this may be changed to true
     nh_.param("invert", invert_, false);
-    
+
     if (invert_)
       ROS_INFO("Inverting filter output");
-	
+
     return true;
   }
 
@@ -130,7 +130,7 @@ public:
     sensor_frame_ = sensor_frame;
     return update(data_in, data_out);
   }
-    
+
   /** \brief Update the filter and return the data seperately
    * \param data_in T array with length width
    * \param data_out T array with length width
@@ -142,7 +142,7 @@ public:
       sm_->maskContainment(data_in, keep);
     } else {
       sm_->maskIntersection(data_in, sensor_frame_, min_sensor_dist_, keep);
-    }	
+    }
     fillResult(data_in, keep, data_out);
     return true;
   }
@@ -173,13 +173,13 @@ public:
   void fillDiff(const PointCloud& data_in, const std::vector<int> &keep, PointCloud& data_out)
   {
     const unsigned int np = data_in.points.size();
-	
-    // fill in output data 
-    data_out.header = data_in.header;	  
-	
+
+    // fill in output data
+    data_out.header = data_in.header;
+
     data_out.points.resize(0);
     data_out.points.reserve(np);
-	
+
     for (unsigned int i = 0 ; i < np ; ++i)
     {
       if ((keep[i] && invert_) || (!keep[i] && !invert_))
@@ -194,12 +194,12 @@ public:
     const unsigned int np = data_in.points.size();
 
     // fill in output data with points that are NOT on the robot
-    data_out.header = data_in.header;	  
-	
+    data_out.header = data_in.header;
+
     data_out.points.resize(0);
     data_out.points.reserve(np);
     PointT nan_point;
-    nan_point.x = std::numeric_limits<float>::quiet_NaN(); 
+    nan_point.x = std::numeric_limits<float>::quiet_NaN();
     nan_point.y = std::numeric_limits<float>::quiet_NaN();
     nan_point.z = std::numeric_limits<float>::quiet_NaN();
     for (unsigned int i = 0 ; i < np ; ++i)
@@ -224,7 +224,7 @@ public:
     sensor_frame_ = sensor_frame;
     return update(data_in, data_out);
   }
-  
+
   virtual bool update(const std::vector<PointCloud> & data_in, std::vector<PointCloud>& data_out)
   {
     bool result = true;
@@ -242,18 +242,18 @@ public:
   void setSensorFrame(const std::string& frame) {
     sensor_frame_ = frame;
   }
-    
+
 protected:
-    
+
   tf::TransformListener tf_;
   robot_self_filter::SelfMask<PointT>* sm_;
-  
+
   ros::NodeHandle nh_;
   bool invert_;
   std::string sensor_frame_;
   double min_sensor_dist_;
   bool keep_organized_;
-  
+
 };
 
 }

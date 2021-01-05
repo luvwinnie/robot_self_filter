@@ -1,17 +1,16 @@
 # http://ros.org/doc/groovy/api/catkin/html/user_guide/supposed.html
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(robot_self_filter)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
 endif()
-
 
 find_package(PkgConfig REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS signals)
+find_package(Boost REQUIRED)
 
-set(bullet_FOUND 0)
+set(bullet_FOUND FALSE)
 pkg_check_modules(bullet REQUIRED bullet)
 
 find_package( PCL REQUIRED )

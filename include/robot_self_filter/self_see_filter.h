@@ -200,17 +200,17 @@ public:
     data_out.points.resize(0);
     data_out.points.reserve(np);
     PointT point;
-    if (!zero_for_removed_points_)
+    if (zero_for_removed_points_)
+    {
+      point.x = 0.;
+      point.y = 0.;
+      point.z = 0.;
+    }
+    else
     {
       point.x = std::numeric_limits<float>::quiet_NaN();
       point.y = std::numeric_limits<float>::quiet_NaN();
       point.z = std::numeric_limits<float>::quiet_NaN();
-    }
-    else
-    {
-      point.x = -0;
-      point.y = -0;
-      point.z = -0;
     }
     for (unsigned int i = 0 ; i < np ; ++i)
     {

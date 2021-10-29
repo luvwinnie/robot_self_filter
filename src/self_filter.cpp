@@ -43,6 +43,12 @@
 
 namespace robot_self_filter
 {
+enum struct SensorType {
+  Rgb,
+  OusterSensor,
+  Default
+};
+
 class SelfFilter
 {
 public:
@@ -52,12 +58,12 @@ public:
     nh_.param<std::string>("sensor_frame", sensor_frame_, std::string());
     nh_.param("use_rgb", use_rgb_, false);
     nh_.param("max_queue_size", max_queue_size_, 10);
-    nh_.param<bool>("ouster_sensor", ouster_sensor_, false);
+    nh_.param<bool>("ouster_sensor", use_ouster_sensor_, false);
     if (use_rgb_)
     {
       self_filter_rgb_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
     }
-    else if (ouster_sensor_)
+    else if (use_ouster_sensor_)
     {
       self_filter_ouster_ = new filters::SelfFilter<PointOuster>(nh_);
     }
@@ -72,7 +78,7 @@ public:
     {
       self_filter_rgb_->getSelfMask()->getLinkNames(frames_);
     }
-    else if (ouster_sensor_)
+    else if (use_ouster_sensor_)
     {
       self_filter_ouster_->getSelfMask()->getLinkNames(frames_);
     }
@@ -168,7 +174,7 @@ private:
       input_size = cloud->points.size();
       output_size = out.points.size();
     }
-    else if (ouster_sensor_)
+    else if (use_ouster_sensor_)
     {
       typename pcl::PointCloud<PointOuster>::Ptr cloud(new pcl::PointCloud<PointOuster>);
       pcl::fromROSMsg(*cloud2, *cloud);
@@ -210,7 +216,7 @@ private:
   std::string sensor_frame_;
   bool use_rgb_;
   bool subscribing_;
-  bool ouster_sensor_;
+  bool use_ouster_sensor_;
   std::vector<std::string> frames_;
 
   ros::Publisher                                        pointCloudPublisher_;

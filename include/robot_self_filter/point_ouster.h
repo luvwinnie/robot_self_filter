@@ -1,8 +1,4 @@
 #include <pcl/pcl_macros.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/common/transforms.h>
 
 ////////////////// OS0-128 Data structure support //////////////////
 /** Ouster Point struct */

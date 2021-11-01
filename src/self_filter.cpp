@@ -43,10 +43,10 @@
 
 namespace robot_self_filter
 {
-enum struct SensorType {
-  Rgb,
-  OusterSensor,
-  Default
+enum struct SensorType : int {
+  XYZSensor = 0,
+  XYZRGBSensor = 1,
+  OusterSensor = 2,
 };
 
 class SelfFilter
@@ -58,21 +58,31 @@ public:
     nh_.param<std::string>("sensor_frame", sensor_frame_, std::string());
     nh_.param("use_rgb", use_rgb_, false);
     nh_.param("max_queue_size", max_queue_size_, 10);
-    nh_.param<bool>("ouster_sensor", use_ouster_sensor_, false);
-    if (use_rgb_)
-    {
-      self_filter_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
+    int temp_sensor_type;
+    nh_.param<int>("lidar_sensor_type", temp_sensor_type, 0);
+    sensor_type_ = static_cast<SensorType>(temp_sensor_type);
+
+    // Instantiate depending on current sensor type
+    switch(sensor_type_) {
+      case SensorType::XYZSensor: {
+        self_filter_ = new filters::SelfFilter<pcl::PointXYZ>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: XYZ." << std::endl;
+        break;
+      }
+      case SensorType::XYZRGBSensor: {
+        self_filter_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: XYZRGB." << std::endl;
+        break;
+      }
+      case SensorType::OusterSensor: {
+        self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: Ouster." << std::endl;
+        break;
+      }
     }
-    else if (use_ouster_sensor_)
-    {
-      self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
-    }
-    else
-    {
-      self_filter_ = new filters::SelfFilter<pcl::PointXYZ>(nh_);
-    }
-    ros::SubscriberStatusCallback connect_cb
-      = boost::bind( &SelfFilter::connectionCallback, this, _1);
+
+    // Subscriber and publisher
+    ros::SubscriberStatusCallback connect_cb = boost::bind( &SelfFilter::connectionCallback, this, _1);
 
     self_filter_->getLinkNames(frames_);
     pointCloudPublisher_ = root_handle_.advertise<sensor_msgs::PointCloud2>("cloud_out", 1,
@@ -160,7 +170,7 @@ private:
   std::string sensor_frame_;
   bool use_rgb_;
   bool subscribing_;
-  bool use_ouster_sensor_;
+  SensorType sensor_type_;
   std::vector<std::string> frames_;
 
   ros::Publisher                                        pointCloudPublisher_;

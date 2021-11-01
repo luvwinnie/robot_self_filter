@@ -37,12 +37,19 @@
 namespace filters
 {
 
+
+class SelfFilterInterface {
+public:
+  virtual void getLinkNames(std::vector<std::string> &frames) = 0;
+  virtual bool fillPointCloud2(const sensor_msgs::PointCloud2::ConstPtr &cloud2, const std::string& sensor_frame, sensor_msgs::PointCloud2& out2, int& input_size, int& output_size) = 0; // doesn't work, because Pointcloud is also templated
+};
+
 /** \brief A filter to remove parts of the robot seen in a pointcloud
  *
  */
 
 template <typename PointT>
-class SelfFilter: public FilterBase <pcl::PointCloud<PointT> >
+class SelfFilter: public FilterBase <pcl::PointCloud<PointT> >, public SelfFilterInterface
 {
 
 public:
@@ -171,6 +178,20 @@ public:
     return true;
   }
 
+  bool fillPointCloud2(const sensor_msgs::PointCloud2::ConstPtr &cloud2, const std::string& sensor_frame, sensor_msgs::PointCloud2& out2, int& input_size, int& output_size) override 
+  {
+    typename pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
+    pcl::fromROSMsg(*cloud2, *cloud);
+    pcl::PointCloud<PointT> out;
+    updateWithSensorFrame(*cloud, out, sensor_frame);
+    pcl::toROSMsg(out, out2);
+    out2.header.stamp = cloud2->header.stamp;
+    input_size = cloud->points.size();
+    output_size = out.points.size();
+
+    return true;
+  }
+
   void fillDiff(const PointCloud& data_in, const std::vector<int> &keep, PointCloud& data_out)
   {
     const unsigned int np = data_in.points.size();
@@ -247,6 +268,10 @@ public:
 
   robot_self_filter::SelfMask<PointT>* getSelfMask() {
     return sm_;
+  }
+
+  void getLinkNames(std::vector<std::string> &frames) override {
+    getSelfMask()->getLinkNames(frames);
   }
 
   void setSensorFrame(const std::string& frame) {

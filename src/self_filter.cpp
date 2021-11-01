@@ -61,11 +61,11 @@ public:
     nh_.param<bool>("ouster_sensor", use_ouster_sensor_, false);
     if (use_rgb_)
     {
-      self_filter_rgb_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
+      self_filter_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
     }
     else if (use_ouster_sensor_)
     {
-      self_filter_ouster_ = new filters::SelfFilter<PointOuster>(nh_);
+      self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
     }
     else
     {
@@ -74,36 +74,14 @@ public:
     ros::SubscriberStatusCallback connect_cb
       = boost::bind( &SelfFilter::connectionCallback, this, _1);
 
-    if (use_rgb_)
-    {
-      self_filter_rgb_->getSelfMask()->getLinkNames(frames_);
-    }
-    else if (use_ouster_sensor_)
-    {
-      self_filter_ouster_->getSelfMask()->getLinkNames(frames_);
-    }
-    else
-    {
-      self_filter_->getSelfMask()->getLinkNames(frames_);
-    }
+    self_filter_->getLinkNames(frames_);
     pointCloudPublisher_ = root_handle_.advertise<sensor_msgs::PointCloud2>("cloud_out", 1,
                                                                             connect_cb, connect_cb);
   }
 
   ~SelfFilter(void)
   {
-    if (self_filter_)
-    {
-      delete self_filter_;
-    }
-    if (self_filter_ouster_)
-    {
-      delete self_filter_ouster_;
-    }
-    if (self_filter_rgb_)
-    {
-      delete self_filter_rgb_;
-    }
+    delete self_filter_;
   }
 
 private:
@@ -163,39 +141,7 @@ private:
     sensor_msgs::PointCloud2 out2;
     int input_size = 0;
     int output_size = 0;
-    if (use_rgb_)
-    {
-      typename pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-      pcl::fromROSMsg(*cloud2, *cloud);
-      pcl::PointCloud<pcl::PointXYZRGB> out;
-      self_filter_rgb_->updateWithSensorFrame(*cloud, out, sensor_frame_);
-      pcl::toROSMsg(out, out2);
-      out2.header.stamp = cloud2->header.stamp;
-      input_size = cloud->points.size();
-      output_size = out.points.size();
-    }
-    else if (use_ouster_sensor_)
-    {
-      typename pcl::PointCloud<PointOuster>::Ptr cloud(new pcl::PointCloud<PointOuster>);
-      pcl::fromROSMsg(*cloud2, *cloud);
-      pcl::PointCloud<PointOuster> out;
-      self_filter_ouster_->updateWithSensorFrame(*cloud, out, sensor_frame_);
-      pcl::toROSMsg(out, out2);
-      out2.header.stamp = cloud2->header.stamp;
-      input_size = cloud->points.size();
-      output_size = out.points.size();
-    }
-    else
-    {
-      typename pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-      pcl::fromROSMsg(*cloud2, *cloud);
-      pcl::PointCloud<pcl::PointXYZ> out;
-      self_filter_->updateWithSensorFrame(*cloud, out, sensor_frame_);
-      pcl::toROSMsg(out, out2);
-      out2.header.stamp = cloud2->header.stamp;
-      input_size = cloud->points.size();
-      output_size = out.points.size();
-    }
+    self_filter_->fillPointCloud2(cloud2, sensor_frame_, out2, input_size, output_size);
 
     double sec = (ros::WallTime::now() - tm).toSec();
     pointCloudPublisher_.publish(out2);
@@ -210,9 +156,7 @@ private:
   boost::shared_ptr<tf::MessageFilter<sensor_msgs::PointCloud2> >          mn_;
   message_filters::Subscriber<sensor_msgs::PointCloud2> sub_;
 
-  filters::SelfFilter<pcl::PointXYZ> *self_filter_;
-  filters::SelfFilter<PointOuster> *self_filter_ouster_;
-  filters::SelfFilter<pcl::PointXYZRGB> *self_filter_rgb_;
+  filters::SelfFilterInterface* self_filter_;
   std::string sensor_frame_;
   bool use_rgb_;
   bool subscribing_;

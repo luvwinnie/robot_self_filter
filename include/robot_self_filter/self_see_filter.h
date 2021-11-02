@@ -37,12 +37,19 @@
 namespace filters
 {
 
+
+class SelfFilterInterface {
+public:
+  virtual void getLinkNames(std::vector<std::string> &frames) = 0;
+  virtual bool fillPointCloud2(const sensor_msgs::PointCloud2::ConstPtr &cloud2, const std::string& sensor_frame, sensor_msgs::PointCloud2& out2, int& input_size, int& output_size) = 0; // doesn't work, because Pointcloud is also templated
+};
+
 /** \brief A filter to remove parts of the robot seen in a pointcloud
  *
  */
 
 template <typename PointT>
-class SelfFilter: public FilterBase <pcl::PointCloud<PointT> >
+class SelfFilter: public FilterBase <pcl::PointCloud<PointT> >, public SelfFilterInterface
 {
 
 public:
@@ -55,6 +62,7 @@ public:
     nh_.param<double>("self_see_default_padding", default_padding, .01);
     nh_.param<double>("self_see_default_scale", default_scale, 1.0);
     nh_.param<bool>("keep_organized", keep_organized_, false);
+    nh_.param<bool>("zero_for_removed_points", zero_for_removed_points_, false);
     std::vector<robot_self_filter::LinkInfo> links;
     std::string link_names;
 
@@ -170,6 +178,20 @@ public:
     return true;
   }
 
+  bool fillPointCloud2(const sensor_msgs::PointCloud2::ConstPtr &cloud2, const std::string& sensor_frame, sensor_msgs::PointCloud2& out2, int& input_size, int& output_size) override 
+  {
+    typename pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
+    pcl::fromROSMsg(*cloud2, *cloud);
+    pcl::PointCloud<PointT> out;
+    updateWithSensorFrame(*cloud, out, sensor_frame);
+    pcl::toROSMsg(out, out2);
+    out2.header.stamp = cloud2->header.stamp;
+    input_size = cloud->points.size();
+    output_size = out.points.size();
+
+    return true;
+  }
+
   void fillDiff(const PointCloud& data_in, const std::vector<int> &keep, PointCloud& data_out)
   {
     const unsigned int np = data_in.points.size();
@@ -198,10 +220,19 @@ public:
 
     data_out.points.resize(0);
     data_out.points.reserve(np);
-    PointT nan_point;
-    nan_point.x = std::numeric_limits<float>::quiet_NaN();
-    nan_point.y = std::numeric_limits<float>::quiet_NaN();
-    nan_point.z = std::numeric_limits<float>::quiet_NaN();
+    PointT point;
+    if (zero_for_removed_points_)
+    {
+      point.x = 0.;
+      point.y = 0.;
+      point.z = 0.;
+    }
+    else
+    {
+      point.x = std::numeric_limits<float>::quiet_NaN();
+      point.y = std::numeric_limits<float>::quiet_NaN();
+      point.z = std::numeric_limits<float>::quiet_NaN();
+    }
     for (unsigned int i = 0 ; i < np ; ++i)
     {
       if (keep[i] == robot_self_filter::OUTSIDE)
@@ -210,7 +241,7 @@ public:
       }
       if (keep_organized_ && keep[i] != robot_self_filter::OUTSIDE)
       {
-        data_out.points.push_back(nan_point);
+        data_out.points.push_back(point);
       }
     }
     if (keep_organized_) {
@@ -239,6 +270,10 @@ public:
     return sm_;
   }
 
+  void getLinkNames(std::vector<std::string> &frames) override {
+    getSelfMask()->getLinkNames(frames);
+  }
+
   void setSensorFrame(const std::string& frame) {
     sensor_frame_ = frame;
   }
@@ -253,6 +288,7 @@ protected:
   std::string sensor_frame_;
   double min_sensor_dist_;
   bool keep_organized_;
+  bool zero_for_removed_points_;
 
 };
 

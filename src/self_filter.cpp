@@ -37,11 +37,18 @@
 #include <ros/ros.h>
 #include <sstream>
 #include "robot_self_filter/self_see_filter.h"
+#include "robot_self_filter/point_ouster.h"
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 
 namespace robot_self_filter
 {
+enum struct SensorType : int {
+  XYZSensor = 0,
+  XYZRGBSensor = 1,
+  OusterSensor = 2,
+};
+
 class SelfFilter
 {
 public:
@@ -51,39 +58,40 @@ public:
     nh_.param<std::string>("sensor_frame", sensor_frame_, std::string());
     nh_.param("use_rgb", use_rgb_, false);
     nh_.param("max_queue_size", max_queue_size_, 10);
-    if (use_rgb_)
-    {
-      self_filter_rgb_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
-    }
-    else
-    {
-      self_filter_ = new filters::SelfFilter<pcl::PointXYZ>(nh_);
-    }
-    ros::SubscriberStatusCallback connect_cb
-      = boost::bind( &SelfFilter::connectionCallback, this, _1);
+    int temp_sensor_type;
+    nh_.param<int>("lidar_sensor_type", temp_sensor_type, 0);
+    sensor_type_ = static_cast<SensorType>(temp_sensor_type);
 
-    if (use_rgb_)
-    {
-      self_filter_rgb_->getSelfMask()->getLinkNames(frames_);
+    // Instantiate depending on current sensor type
+    switch(sensor_type_) {
+      case SensorType::XYZSensor: {
+        self_filter_ = new filters::SelfFilter<pcl::PointXYZ>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: XYZ." << std::endl;
+        break;
+      }
+      case SensorType::XYZRGBSensor: {
+        self_filter_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: XYZRGB." << std::endl;
+        break;
+      }
+      case SensorType::OusterSensor: {
+        self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: Ouster." << std::endl;
+        break;
+      }
     }
-    else
-    {
-      self_filter_->getSelfMask()->getLinkNames(frames_);
-    }
+
+    // Subscriber and publisher
+    ros::SubscriberStatusCallback connect_cb = boost::bind( &SelfFilter::connectionCallback, this, _1);
+
+    self_filter_->getLinkNames(frames_);
     pointCloudPublisher_ = root_handle_.advertise<sensor_msgs::PointCloud2>("cloud_out", 1,
                                                                             connect_cb, connect_cb);
   }
 
   ~SelfFilter(void)
   {
-    if (self_filter_)
-    {
-      delete self_filter_;
-    }
-    if (self_filter_rgb_)
-    {
-      delete self_filter_rgb_;
-    }
+    delete self_filter_;
   }
 
 private:
@@ -133,39 +141,17 @@ private:
     pointCloudPublisher_.publish(cloud);
     ROS_DEBUG("Self filter publishing unfiltered frame");
   }
-
+  
   void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud2)
   {
     ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud2->header.stamp).toSec());
     std::vector<int> mask;
     ros::WallTime tm = ros::WallTime::now();
 
-
     sensor_msgs::PointCloud2 out2;
     int input_size = 0;
     int output_size = 0;
-    if (use_rgb_)
-    {
-      typename pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-      pcl::fromROSMsg(*cloud2, *cloud);
-      pcl::PointCloud<pcl::PointXYZRGB> out;
-      self_filter_rgb_->updateWithSensorFrame(*cloud, out, sensor_frame_);
-      pcl::toROSMsg(out, out2);
-      out2.header.stamp = cloud2->header.stamp;
-      input_size = cloud->points.size();
-      output_size = out.points.size();
-    }
-    else
-    {
-      typename pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-      pcl::fromROSMsg(*cloud2, *cloud);
-      pcl::PointCloud<pcl::PointXYZ> out;
-      self_filter_->updateWithSensorFrame(*cloud, out, sensor_frame_);
-      pcl::toROSMsg(out, out2);
-      out2.header.stamp = cloud2->header.stamp;
-      input_size = cloud->points.size();
-      output_size = out.points.size();
-    }
+    self_filter_->fillPointCloud2(cloud2, sensor_frame_, out2, input_size, output_size);
 
     double sec = (ros::WallTime::now() - tm).toSec();
     pointCloudPublisher_.publish(out2);
@@ -180,11 +166,11 @@ private:
   boost::shared_ptr<tf::MessageFilter<sensor_msgs::PointCloud2> >          mn_;
   message_filters::Subscriber<sensor_msgs::PointCloud2> sub_;
 
-  filters::SelfFilter<pcl::PointXYZ> *self_filter_;
-  filters::SelfFilter<pcl::PointXYZRGB> *self_filter_rgb_;
+  filters::SelfFilterInterface* self_filter_;
   std::string sensor_frame_;
   bool use_rgb_;
   bool subscribing_;
+  SensorType sensor_type_;
   std::vector<std::string> frames_;
 
   ros::Publisher                                        pointCloudPublisher_;

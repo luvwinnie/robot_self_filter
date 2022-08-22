@@ -38,6 +38,7 @@
 #include <sstream>
 #include "robot_self_filter/self_see_filter.h"
 #include "robot_self_filter/point_ouster.h"
+#include "robot_self_filter/point_hesai.h"
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 
@@ -47,6 +48,7 @@ enum struct SensorType : int {
   XYZSensor = 0,
   XYZRGBSensor = 1,
   OusterSensor = 2,
+  HesaiSensor = 3,
 };
 
 class SelfFilter
@@ -77,6 +79,11 @@ public:
       case SensorType::OusterSensor: {
         self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
         std::cout << "robot_self_filter: Defined sensor type: Ouster." << std::endl;
+        break;
+      }
+      case SensorType::HesaiSensor: {
+        self_filter_ = new filters::SelfFilter<PointHesai>(nh_);
+        std::cout << "robot_self_filter: Defined sensor type: Hesai." << std::endl;
         break;
       }
     }

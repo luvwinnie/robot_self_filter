@@ -39,6 +39,7 @@
 #include "robot_self_filter/self_see_filter.h"
 #include "robot_self_filter/point_ouster.h"
 #include "robot_self_filter/point_hesai.h"
+#include "robot_self_filter/point_robosense.h"
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 
@@ -49,6 +50,7 @@ enum struct SensorType : int {
   XYZRGBSensor = 1,
   OusterSensor = 2,
   HesaiSensor = 3,
+  RobosenseSensor = 4,
 };
 
 class SelfFilter
@@ -68,22 +70,37 @@ public:
     switch(sensor_type_) {
       case SensorType::XYZSensor: {
         self_filter_ = new filters::SelfFilter<pcl::PointXYZ>(nh_);
+        std::cout << "-----------------------" << std::endl;
         std::cout << "robot_self_filter: Defined sensor type: XYZ." << std::endl;
+        std::cout << "-----------------------" << std::endl;
         break;
       }
       case SensorType::XYZRGBSensor: {
         self_filter_ = new filters::SelfFilter<pcl::PointXYZRGB>(nh_);
+        std::cout << "-----------------------" << std::endl;
         std::cout << "robot_self_filter: Defined sensor type: XYZRGB." << std::endl;
+        std::cout << "-----------------------" << std::endl;
         break;
       }
       case SensorType::OusterSensor: {
         self_filter_ = new filters::SelfFilter<PointOuster>(nh_);
+        std::cout << "-----------------------" << std::endl;
         std::cout << "robot_self_filter: Defined sensor type: Ouster." << std::endl;
+        std::cout << "-----------------------" << std::endl;
         break;
       }
       case SensorType::HesaiSensor: {
         self_filter_ = new filters::SelfFilter<PointHesai>(nh_);
+        std::cout << "-----------------------" << std::endl;
         std::cout << "robot_self_filter: Defined sensor type: Hesai." << std::endl;
+        std::cout << "-----------------------" << std::endl;
+        break;
+      }
+      case SensorType::RobosenseSensor: {
+        self_filter_ = new filters::SelfFilter<PointRobosense>(nh_);
+        std::cout << "-----------------------" << std::endl;
+        std::cout << "robot_self_filter: Defined sensor type: Robosense." << std::endl;
+        std::cout << "-----------------------" << std::endl;
         break;
       }
     }

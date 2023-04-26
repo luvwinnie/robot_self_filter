@@ -39,6 +39,7 @@
 #include "robot_self_filter/self_see_filter.h"
 #include "robot_self_filter/point_ouster.h"
 #include "robot_self_filter/point_hesai.h"
+#include "robot_self_filter/point_pandar.h"
 #include "robot_self_filter/point_robosense.h"
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
@@ -51,6 +52,7 @@ enum struct SensorType : int {
   OusterSensor = 2,
   HesaiSensor = 3,
   RobosenseSensor = 4,
+  PandarSensor = 5,
 };
 
 class SelfFilter
@@ -103,6 +105,13 @@ public:
         std::cout << "-----------------------" << std::endl;
         break;
       }
+      case SensorType::PandarSensor:{
+        self_filter_ = new filters::SelfFilter<PointPandar>(nh_);
+        std::cout << "-----------------------" << std::endl;
+        std::cout << "robot_self_filter: Defined sensor type: Pandar." << std::endl;
+        std::cout << "-----------------------" << std::endl;
+        break;
+	  }
     }
 
     // Subscriber and publisher

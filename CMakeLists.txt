@@ -177,6 +177,13 @@ install(
 )
 
 install(
+  DIRECTORY
+    launch
+    params
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
   TARGETS
     robot_geometric_shapes
     ${PROJECT_NAME}

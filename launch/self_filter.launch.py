@@ -1,8 +1,8 @@
 # self_filter.launch.py
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, LogInfo
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -33,6 +33,9 @@ def generate_launch_description():
     filter_config_arg = DeclareLaunchArgument(
         'filter_config'
     )
+
+    # Create a log action to print the config
+    log_config = LogInfo(msg=LaunchConfiguration('filter_config'))
 
     self_filter_node = Node(
         package='robot_self_filter',
@@ -66,5 +69,6 @@ def generate_launch_description():
         out_pointcloud_topic_arg,
         robot_description_arg,
         filter_config_arg,
+        log_config,
         self_filter_node
     ])

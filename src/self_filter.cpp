@@ -124,6 +124,9 @@ namespace robot_self_filter
       RCLCPP_INFO(this->get_logger(), "Received cloud message with timestamp %.6f",
                   rclcpp::Time(cloud->header.stamp).seconds());
 
+      RCLCPP_INFO(this->get_logger(), "Point cloud size: width = %d, height = %d, total points = %d",
+                  cloud->width, cloud->height, cloud->width * cloud->height);
+
       sensor_msgs::msg::PointCloud2 out2;
       int input_size = 0;
       int output_size = 0;

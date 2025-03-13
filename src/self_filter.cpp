@@ -54,18 +54,21 @@ namespace robot_self_filter
       this->declare_parameter<int>("max_queue_size", 10);
       this->declare_parameter<int>("lidar_sensor_type", 0);
       this->declare_parameter<std::string>("robot_description", "");
+      this->declare_parameter<std::string>("in_pointcloud_topic", "/cloud_in");
 
       sensor_frame_ = this->get_parameter("sensor_frame").as_string();
       use_rgb_ = this->get_parameter("use_rgb").as_bool();
       max_queue_size_ = this->get_parameter("max_queue_size").as_int();
       int temp_sensor_type = this->get_parameter("lidar_sensor_type").as_int();
       sensor_type_ = static_cast<SensorType>(temp_sensor_type);
+      in_topic_ = this->get_parameter("in_pointcloud_topic").as_string();
 
       RCLCPP_INFO(this->get_logger(), "Parameters:");
       RCLCPP_INFO(this->get_logger(), "  sensor_frame: %s", sensor_frame_.c_str());
       RCLCPP_INFO(this->get_logger(), "  use_rgb: %s", use_rgb_ ? "true" : "false");
       RCLCPP_INFO(this->get_logger(), "  max_queue_size: %d", max_queue_size_);
       RCLCPP_INFO(this->get_logger(), "  lidar_sensor_type: %d", temp_sensor_type);
+      RCLCPP_INFO(this->get_logger(), "  in_pointcloud_topic: %s", in_topic_.c_str());
 
       tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
       tf_buffer_->setCreateTimerInterface(
@@ -113,7 +116,7 @@ namespace robot_self_filter
       self_filter_->getLinkNames(frames_);
 
       sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-          "lidar1/point_cloud",
+          in_topic_,
           rclcpp::SensorDataQoS(),
           std::bind(&SelfFilterNode::cloudCallback, this, std::placeholders::_1));
     }
@@ -294,6 +297,7 @@ namespace robot_self_filter
     SensorType sensor_type_;
     int max_queue_size_;
     std::vector<std::string> frames_;
+    std::string in_topic_;
   };
 
 } // namespace robot_self_filter

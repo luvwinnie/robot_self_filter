@@ -33,6 +33,12 @@ def generate_launch_description():
     filter_config_arg = DeclareLaunchArgument(
         'filter_config'
     )
+    # Declare use_sim_time argument
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true', # Keep default as true for standalone use
+        description='Use simulation (Gazebo) clock if true'
+    )
 
     # Create a log action to print the config
     log_config = LogInfo(msg=LaunchConfiguration('filter_config'))
@@ -51,7 +57,7 @@ def generate_launch_description():
                     value_type=str
                 ),
                 'zero_for_removed_points': LaunchConfiguration('zero_for_removed_points'),
-                'use_sim_time': True
+                'use_sim_time': LaunchConfiguration('use_sim_time') # Use the launch argument
             }
         ],
         remappings=[
@@ -69,6 +75,7 @@ def generate_launch_description():
         out_pointcloud_topic_arg,
         robot_description_arg,
         filter_config_arg,
+        use_sim_time_arg, # Add to launch description
         log_config,
         self_filter_node
     ])

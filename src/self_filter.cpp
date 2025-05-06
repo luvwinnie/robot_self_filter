@@ -48,8 +48,8 @@ namespace robot_self_filter
       {
       }
 
-      this->declare_parameter<std::string>("sensor_frame", "Lidar");
-      this->set_parameter(rclcpp::Parameter("sensor_frame", "Lidar"));
+      this->declare_parameter<std::string>("sensor_frame", "Lidar"); // Default value
+      // this->set_parameter(rclcpp::Parameter("sensor_frame", "Lidar")); // Removed explicit set
       this->declare_parameter<bool>("use_rgb", false);
       this->declare_parameter<int>("max_queue_size", 10);
       this->declare_parameter<int>("lidar_sensor_type", 0);

@@ -1,0 +1,33 @@
+# Minimal test configuration - only one small camera box
+self_filter:
+  ros__parameters:
+    sensor_frame: "livox_frame"
+    
+    # Filtering behavior
+    invert: false                    # false = keep points OUTSIDE robot, filter points INSIDE robot
+    keep_organized: false
+    zero_for_removed_points: false
+    
+    # Sensor parameters
+    min_sensor_dist: 0.01
+    
+    # Default scaling for primitive shapes
+    default_scale: 1.0
+    default_padding: 0.001
+    default_box_scale: [1.0, 1.0, 1.0]
+    default_box_padding: [0.001, 0.001, 0.001]
+    default_cylinder_scale: [1.0, 1.0]
+    default_cylinder_padding: [0.001, 0.001]
+    default_sphere_scale: 1.0
+    default_sphere_padding: 0.001
+    
+    # Only test with one small camera box (3cm x 3cm x 3cm)
+    self_see_links:
+      names: [
+        "tier4_camera_link_left"
+      ]
+      
+      # This should be a 3cm box at position (0.30, -0.205, 0.10) relative to base_link
+      tier4_camera_link_left:
+        box_scale: [1.0, 1.0, 1.0]        # 3cm box (from URDF)
+        box_padding: [0.001, 0.001, 0.001]  # 1mm padding 

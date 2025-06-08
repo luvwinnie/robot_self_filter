@@ -113,6 +113,22 @@ target_link_libraries(self_filter
   ${YAML_CPP_LIBRARIES}
 )
 
+add_executable(test_self_filter_debug
+  src/test_self_filter_debug.cpp
+)
+
+target_link_libraries(test_self_filter_debug
+  ${PROJECT_NAME}
+  robot_geometric_shapes
+  ${ASSIMP_LIBRARIES}
+)
+
+add_executable(test_filter_monitor
+  src/test_filter_monitor.cpp
+)
+
+target_link_libraries(test_filter_monitor)
+
 #
 # Link dependencies
 #
@@ -168,6 +184,24 @@ ament_target_dependencies(self_filter
   filters
 )
 
+ament_target_dependencies(test_self_filter_debug
+  rclcpp
+  tf2
+  tf2_ros
+  geometry_msgs
+  sensor_msgs
+  urdf
+  resource_retriever
+  visualization_msgs
+  pcl_ros  # or pcl_conversions
+  filters
+)
+
+ament_target_dependencies(test_filter_monitor
+  rclcpp
+  sensor_msgs
+)
+
 #
 # Install
 #
@@ -189,6 +223,8 @@ install(
     ${PROJECT_NAME}
 #    test_filter
     self_filter
+    test_self_filter_debug
+    test_filter_monitor
   DESTINATION lib/${PROJECT_NAME}
 )
 

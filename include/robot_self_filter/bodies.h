@@ -242,6 +242,18 @@ public:
   ConvexMesh(const shapes::Shape *shape);
   ~ConvexMesh() override = default;
 
+  // Add scaling and padding support like other shape classes
+  void setScale(double sx, double sy, double sz)
+  {
+    m_scale[0] = sx; m_scale[1] = sy; m_scale[2] = sz;
+    updateInternalData();
+  }
+  void setPadding(double px, double py, double pz)
+  {
+    m_padding[0] = px; m_padding[1] = py; m_padding[2] = pz;
+    updateInternalData();
+  }
+
   bool containsPoint(const tf2::Vector3 &p, bool verbose = false) const override;
   bool intersectsRay(const tf2::Vector3 &origin,
                      const tf2::Vector3 &dir,
@@ -259,6 +271,10 @@ protected:
 
   bool isPointInsidePlanes(const tf2::Vector3 &point) const;
   unsigned int countVerticesBehindPlane(const Eigen::Vector4d &planeNormal) const;
+
+  // Add scale and padding member variables
+  double m_scale[3];   // x,y,z scaling factors
+  double m_padding[3]; // x,y,z padding values
 
   std::vector<Eigen::Vector4d> m_planes;
   std::vector<tf2::Vector3>    m_vertices;

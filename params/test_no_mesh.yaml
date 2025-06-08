@@ -1,0 +1,45 @@
+# Test configuration - no mesh shapes, only primitive shapes
+self_filter:
+  ros__parameters:
+    sensor_frame: "livox_frame"
+    
+    # Filtering behavior
+    invert: false
+    keep_organized: false
+    zero_for_removed_points: false
+    
+    # Sensor parameters
+    min_sensor_dist: 0.01
+    
+    # Default scaling for primitive shapes
+    default_scale: 1.0
+    default_padding: 0.005
+    default_box_scale: [1.0, 1.0, 1.0]
+    default_box_padding: [0.005, 0.005, 0.005]
+    default_cylinder_scale: [1.0, 1.0]
+    default_cylinder_padding: [0.005, 0.005]
+    default_sphere_scale: 1.0
+    default_sphere_padding: 0.005
+    
+    # Only primitive collision shapes (no mesh shapes)
+    self_see_links:
+      names: [
+        "tier4_camera_link_left",
+        "tier4_camera_link_right",
+        "ee_camera_bottom_Link",
+        "D405_link"
+      ]
+      
+      # Camera boxes (3cm each)
+      tier4_camera_link_left:
+        box_scale: [1.0, 1.0, 1.0]
+        box_padding: [0.005, 0.005, 0.005]
+      tier4_camera_link_right:
+        box_scale: [1.0, 1.0, 1.0]
+        box_padding: [0.005, 0.005, 0.005]
+      ee_camera_bottom_Link:
+        box_scale: [1.0, 1.0, 1.0]
+        box_padding: [0.005, 0.005, 0.005]
+      D405_link:
+        box_scale: [1.0, 1.0, 1.0]
+        box_padding: [0.005, 0.005, 0.005] 

@@ -394,11 +394,21 @@ bool Box::intersectsRay(const tf2::Vector3 &origin,
 }
 
 // ConvexMesh (unchanged except for normal scale/padding usage)
-ConvexMesh::ConvexMesh() : Body()
+ConvexMesh::ConvexMesh()
 {
-  m_type       = shapes::MESH;
-  m_radiusB    = 0.0;
+  m_type = shapes::MESH;
+  // Initialize scaling to identity and padding to zero
+  for (int i = 0; i < 3; i++)
+  {
+    m_scale[i] = 1.0;
+    m_padding[i] = 0.0;
+  }
+  m_meshRadiusB = 0.0;
+  m_radiusB = 0.0;
   m_radiusBSqr = 0.0;
+  m_meshCenter.setValue(0, 0, 0);
+  m_center.setValue(0, 0, 0);
+  m_boxOffset.setValue(0, 0, 0);
 }
 ConvexMesh::ConvexMesh(const shapes::Shape *shape) : ConvexMesh()
 {
@@ -593,18 +603,44 @@ void ConvexMesh::updateInternalData()
   tf2::Transform pose = m_pose;
   pose.setOrigin(m_pose * m_boxOffset);
   m_boundingBox.setPose(pose);
-  // Could apply uniform scale/padding if desired, left as-is for example
   m_iPose   = m_pose.inverse();
   m_center  = m_pose * m_meshCenter;
-  m_radiusB = m_meshRadiusB; 
-  m_radiusBSqr = m_radiusB * m_radiusB;
 
+  // Apply proper scaling and padding to mesh vertices
   m_scaledVertices.resize(m_vertices.size());
-  for (size_t i=0; i<m_vertices.size(); i++)
+  double max_radius = 0.0;
+  tf2::Vector3 scaled_center(0, 0, 0);
+  
+  for (size_t i = 0; i < m_vertices.size(); i++)
   {
-    // Uniform scaling placeholder
-    m_scaledVertices[i] = m_vertices[i];
+    // Apply per-axis scaling and padding
+    tf2::Vector3 scaled_vertex;
+    scaled_vertex.setX(m_vertices[i].x() * m_scale[0] + (m_vertices[i].x() >= 0 ? m_padding[0] : -m_padding[0]));
+    scaled_vertex.setY(m_vertices[i].y() * m_scale[1] + (m_vertices[i].y() >= 0 ? m_padding[1] : -m_padding[1]));
+    scaled_vertex.setZ(m_vertices[i].z() * m_scale[2] + (m_vertices[i].z() >= 0 ? m_padding[2] : -m_padding[2]));
+    
+    m_scaledVertices[i] = scaled_vertex;
+    scaled_center += scaled_vertex;
+    
+    // Update bounding radius based on scaled vertices
+    double dist = scaled_vertex.length2();
+    if (dist > max_radius) max_radius = dist;
   }
+  
+  // Update mesh center and radius based on scaled vertices
+  if (!m_vertices.empty())
+  {
+    scaled_center /= (double)m_vertices.size();
+    max_radius = 0.0;
+    for (const auto& vertex : m_scaledVertices)
+    {
+      double dist = vertex.distance2(scaled_center);
+      if (dist > max_radius) max_radius = dist;
+    }
+  }
+  
+  m_radiusB = std::sqrt(max_radius);
+  m_radiusBSqr = m_radiusB * m_radiusB;
 }
 bool ConvexMesh::isPointInsidePlanes(const tf2::Vector3 &point) const
 {

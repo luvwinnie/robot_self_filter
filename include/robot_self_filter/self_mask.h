@@ -47,6 +47,10 @@ struct LinkInfo
   // For cylinders
   std::vector<double> cylinder_scale;   // [rad_scale, vert_scale]
   std::vector<double> cylinder_padding; // [rad_pad,   vert_pad]
+
+  // For mesh shapes - to support URDF mesh scaling
+  std::vector<double> mesh_scale;    // [sx, sy, sz]
+  std::vector<double> mesh_padding;  // [px, py, pz]
 };
 
 static inline tf2::Transform urdfPose2TFTransform(const urdf::Pose &pose)
@@ -56,29 +60,36 @@ static inline tf2::Transform urdfPose2TFTransform(const urdf::Pose &pose)
   return tf2::Transform(q, t);
 }
 
-static shapes::Shape* constructShape(const urdf::Geometry *geom)
+// Return both the shape and URDF mesh scaling information
+struct ShapeWithScale
 {
-  if (!geom) return nullptr;
+  shapes::Shape* shape = nullptr;
+  tf2::Vector3 urdf_scale{1.0, 1.0, 1.0};  // URDF mesh scaling
+};
 
-  shapes::Shape *result = nullptr;
+static ShapeWithScale constructShapeWithScale(const urdf::Geometry *geom)
+{
+  ShapeWithScale result;
+  if (!geom) return result;
+
   switch (geom->type)
   {
     case urdf::Geometry::SPHERE:
     {
       const auto *sphere = dynamic_cast<const urdf::Sphere*>(geom);
-      result = new shapes::Sphere(sphere->radius);
+      result.shape = new shapes::Sphere(sphere->radius);
       break;
     }
     case urdf::Geometry::BOX:
     {
       const auto *box = dynamic_cast<const urdf::Box*>(geom);
-      result = new shapes::Box(box->dim.x, box->dim.y, box->dim.z);
+      result.shape = new shapes::Box(box->dim.x, box->dim.y, box->dim.z);
       break;
     }
     case urdf::Geometry::CYLINDER:
     {
       const auto *cyl = dynamic_cast<const urdf::Cylinder*>(geom);
-      result = new shapes::Cylinder(cyl->radius, cyl->length);
+      result.shape = new shapes::Cylinder(cyl->radius, cyl->length);
       break;
     }
     case urdf::Geometry::MESH:
@@ -86,6 +97,9 @@ static shapes::Shape* constructShape(const urdf::Geometry *geom)
       const auto *mesh = dynamic_cast<const urdf::Mesh*>(geom);
       if (mesh && !mesh->filename.empty())
       {
+        // Extract URDF mesh scaling (like MoveIt does)
+        result.urdf_scale.setValue(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+        
         resource_retriever::Retriever retriever;
         resource_retriever::MemoryResource res;
         try
@@ -94,16 +108,16 @@ static shapes::Shape* constructShape(const urdf::Geometry *geom)
         }
         catch (...)
         {
-          return nullptr;
+          return result;
         }
         if (res.size > 0)
         {
           boost::filesystem::path model_path(mesh->filename);
           std::string ext = model_path.extension().string();
           if (ext == ".dae" || ext == ".DAE")
-            result = shapes::createMeshFromBinaryDAE(mesh->filename.c_str());
+            result.shape = shapes::createMeshFromBinaryDAE(mesh->filename.c_str());
           else
-            result = shapes::createMeshFromBinaryStlData(reinterpret_cast<char*>(res.data.get()), res.size);
+            result.shape = shapes::createMeshFromBinaryStlData(reinterpret_cast<char*>(res.data.get()), res.size);
         }
       }
       break;
@@ -112,6 +126,12 @@ static shapes::Shape* constructShape(const urdf::Geometry *geom)
       break;
   }
   return result;
+}
+
+// Legacy function for compatibility
+static shapes::Shape* constructShape(const urdf::Geometry *geom)
+{
+  return constructShapeWithScale(geom).shape;
 }
 
 template <typename PointT>
@@ -384,13 +404,13 @@ protected:
 
       for (auto &coll : collisions)
       {
-        shapes::Shape *shape = constructShape(coll->geometry.get());
-        if (!shape) continue;
+        ShapeWithScale shape_info = constructShapeWithScale(coll->geometry.get());
+        if (!shape_info.shape) continue;
 
         SeeLink sl;
         sl.name       = linfo.name;
         sl.constTransf = urdfPose2TFTransform(coll->origin);
-        sl.body       = bodies::createBodyFromShape(shape);
+        sl.body       = bodies::createBodyFromShape(shape_info.shape);
 
         if (sl.body)
         {
@@ -445,32 +465,83 @@ protected:
             }
             case shapes::MESH:
             {
-              // For a mesh, you might do uniform scale/padding
-              // but there's no single "setScale" in the base class.
-              // In the improved code we do it similarly to a sphere: single scale/padding
               auto mesh_body = dynamic_cast<bodies::ConvexMesh*>(sl.body);
-              // Possibly store your scale/padding if you want a custom approach
-              // For now, no direct function calls for multi-scale, so do uniform or skip
-              // You might implement your own approach. For demonstration:
-              // We'll ignore multi-dim box/cylinder arrays for the mesh
-              // because it's not natively supported.
-              // That means we'd do uniform scale/padding in `updateInternalData()`,
-              // if implemented in ConvexMesh.
-              // -> No direct calls needed here. 
-              // (Or you could design a custom method to do it.)
+              if (mesh_body)
+              {
+                // Apply URDF mesh scaling combined with user configuration scaling
+                double final_scale_x, final_scale_y, final_scale_z;
+                double final_pad_x, final_pad_y, final_pad_z;
+                
+                if (linfo.mesh_scale.size() == 3 && linfo.mesh_padding.size() == 3)
+                {
+                  // Use user-specified mesh scaling/padding
+                  final_scale_x = shape_info.urdf_scale.x() * linfo.mesh_scale[0];
+                  final_scale_y = shape_info.urdf_scale.y() * linfo.mesh_scale[1];
+                  final_scale_z = shape_info.urdf_scale.z() * linfo.mesh_scale[2];
+                  final_pad_x = linfo.mesh_padding[0];
+                  final_pad_y = linfo.mesh_padding[1];
+                  final_pad_z = linfo.mesh_padding[2];
+                }
+                else
+                {
+                  // Fallback: use URDF scaling + uniform user scaling/padding
+                  final_scale_x = shape_info.urdf_scale.x() * linfo.scale;
+                  final_scale_y = shape_info.urdf_scale.y() * linfo.scale;
+                  final_scale_z = shape_info.urdf_scale.z() * linfo.scale;
+                  final_pad_x = final_pad_y = final_pad_z = linfo.padding;
+                }
+                
+                // SAFETY CHECK: Skip mesh shapes with very small scaling that cause issues
+                if (final_scale_x < 0.01 || final_scale_y < 0.01 || final_scale_z < 0.01)
+                {
+                  RCLCPP_WARN(node_->get_logger(), 
+                             "Skipping mesh collision shape for link '%s' due to problematic scaling [%.3f, %.3f, %.3f]. "
+                             "Consider using primitive collision shapes instead.",
+                             linfo.name.c_str(), final_scale_x, final_scale_y, final_scale_z);
+                  delete sl.body;
+                  sl.body = nullptr;
+                  delete sl.unscaledBody;
+                  sl.unscaledBody = nullptr;
+                  break;  // Skip this collision shape
+                }
+                
+                mesh_body->setScale(final_scale_x, final_scale_y, final_scale_z);
+                mesh_body->setPadding(final_pad_x, final_pad_y, final_pad_z);
+              }
               break;
             }
             default:
               break;
           }
 
+          // Skip if collision shape was marked as problematic
+          if (!sl.body)
+          {
+            delete shape_info.shape;
+            continue;
+          }
+
           // compute volume
           sl.volume        = sl.body->computeVolume();
-          sl.unscaledBody  = bodies::createBodyFromShape(shape);
+          
+          // Create unscaled body with proper URDF scaling applied
+          sl.unscaledBody  = bodies::createBodyFromShape(shape_info.shape);
+          if (sl.unscaledBody && sl.unscaledBody->getType() == shapes::MESH)
+          {
+            auto unscaled_mesh = dynamic_cast<bodies::ConvexMesh*>(sl.unscaledBody);
+            if (unscaled_mesh)
+            {
+              // Apply URDF mesh scaling to unscaled body (but no user padding/scaling)
+              unscaled_mesh->setScale(shape_info.urdf_scale.x(), 
+                                    shape_info.urdf_scale.y(), 
+                                    shape_info.urdf_scale.z());
+              unscaled_mesh->setPadding(0.0, 0.0, 0.0);  // No padding for unscaled
+            }
+          }
 
           bodies_.push_back(sl);
         }
-        delete shape;
+        delete shape_info.shape;
       }
     }
 

@@ -1,70 +1,122 @@
-# ============================ filter_improved.yaml ============================
-self_filter_ouster_horizontal:
+# ============================ CRX5IA Livox Mid-70 Configuration ============================
+# Optimized for UPWARD-FACING LiDAR mounted on base_link
+# LiDAR position: xyz="0.275 0.0 0.09" rpy="0 -π/2 0" (facing up)
+# Robot dimensions: l_base=0.185m, l_2=0.41m, l_4=0.43m, l_5=0.13m, l_6=0.145m
+# IMPORTANT: Robot arm joints use mesh collision shapes with scale="0.001 0.001 0.001" in URDF
+# SCALING: Use primitive collision shapes for reliable visualization and filtering
+self_filter:
   ros__parameters:
-    sensor_frame: "Lidar"
+    sensor_frame: "livox_frame"  # Match the actual frame from point cloud
 
-    # For spheres (single scale & padding)
-    default_sphere_scale: 1.0
-    default_sphere_padding: 0.01
-
-    # For boxes (x,y,z scale & padding)
-    default_box_scale: [1.0, 1.0, 1.0]
-    default_box_padding: [0.01, 0.01, 0.01]
-
-    # For cylinders (radial scale, vertical scale, radial padding, vertical padding)
-    default_cylinder_scale: [1.0, 1.0]
-    default_cylinder_padding: [0.01, 0.01]
-
-    keep_organized: false
-    zero_for_removed_points: false
-    invert: false
-    min_sensor_dist: 2.0
-
-    # Link definitions
+    # Point cloud field mapping for Livox Mid-70
+    # Livox uses: x, y, z, intensity, timestamp (different from standard LiDAR)
+    # Standard LiDAR uses: x, y, z, intensity, ring
+    use_rgb: false
+    use_intensity: true
+    
+    # Filtering behavior
+    invert: false                    # false = keep points OUTSIDE robot, filter points INSIDE robot
+    keep_organized: false            # false = remove filtered points, true = set to NaN/zero
+    zero_for_removed_points: false   # false = use NaN for removed points
+    
+    # Sensor parameters
+    min_sensor_dist: 0.01           # Minimum distance from sensor (1cm)
+    
+    # Default scaling for primitive shapes (MODERATE - for non-moving parts)
+    default_scale: 1.2
+    default_padding: 0.02          # Moderate padding for stationary parts
+    default_box_scale: [1.2, 1.2, 1.2]
+    default_box_padding: [0.02, 0.02, 0.02]  # Moderate padding
+    default_cylinder_scale: [1.2, 1.2]
+    default_cylinder_padding: [0.02, 0.02]    # Moderate padding
+    default_sphere_scale: 1.2
+    default_sphere_padding: 0.02   # Moderate padding
+    
+    # Robot links to filter (collision shapes from URDF)
     self_see_links:
-      names:
-        - BASE
-        - CABIN
-        - ROTO
-        - ROTO_BASE
-        - ENDEFFECTOR
-        - SHOVEL
-        - STICK
-        - TELE
-        - BOOM
-        - LF_WHEEL
-        - LH_WHEEL
-        - RF_WHEEL
-        - RH_WHEEL
-
-      # Example custom overrides:
-      TELE:
-        # If TELE is a box, define 3 scale factors and 3 paddings
-        box_scale: [1.0, 1.0, 1.0]
-        box_padding: [0.05, 0.05, 0.05]
+      names: [
+        "base_footprint",
+        "base_link", 
+        "J1_link",
+        "J2_link", 
+        "J3_link",
+        "J4_link",
+        "J5_link", 
+        "J6_link",
+        "flange",
+        "ee_bottom_link",
+        "ee_camera_bottom_Link",
+        "D405_link",
+        "gripper_finger_Link",
+        "tier4_camera_link_left",
+        "tier4_camera_link_right"
+      ]
       
-      STICK:
-        box_scale: [1.1, 1.1, 1.7]
-        box_padding: [0.05, 0.22, 0.05]
+      # Per-link primitive collision shape configuration - REPLACE PROBLEMATIC MESHES
+      # Use reliable primitive shapes instead of problematic mesh shapes
       
-      BOOM:
-        # If BOOM is a box, define 3 scale factors and 3 paddings
-        box_scale: [1.0, 1.0, 1.3]
-        box_padding: [0.05, 0.1, 0.22]
-
-      LF_WHEEL:
-        # If wheels are cylinders: radial scale, vertical scale, radial padding, vertical padding
-        cylinder_scale: [1.0, 1.0]
-        cylinder_padding: [0.05, 0.3]
-
-      LH_WHEEL:
-        cylinder_scale: [1.0, 1.0]
-        cylinder_padding: [0.05, 0.3]
-
-      RF_WHEEL:
-        cylinder_scale: [1.0, 1.0]
-        cylinder_padding: [0.05, 0.3]
-
-      RH_WHEEL:
-        cylinder_scale: [1.0, 1.0]
-        cylinder_padding: [0.05, 0.3]
+      # Base parts - CONSERVATIVE for stationary base
+      base_footprint:
+        # Use box for base footprint (approximately 400x400x100mm)
+        box_scale: [1.1, 1.1, 1.1]       # Conservative scale for stationary base
+        box_padding: [0.02, 0.02, 0.02]  # Conservative padding for base
+        
+      # Moving arm parts - AGGRESSIVE for moving robot parts
+      base_link:
+        # Use cylinder for base_link (approximately 185mm diameter, 180mm height)
+        cylinder_scale: [1.5, 1.5]       # Aggressive for moving arm base
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving parts
+      
+      # Robot arm joints - USE PRIMITIVE SHAPES for reliable filtering
+      J1_link:
+        # Use cylinder for J1 rotary joint (approximately 120mm diameter, 150mm height)
+        cylinder_scale: [1.8, 1.8]       # Aggressive for moving joint
+        cylinder_padding: [0.06, 0.06]   # Large padding for moving joint
+      J2_link:
+        # Use box for J2 link arm (approximately 100x120x400mm)
+        box_scale: [1.8, 1.8, 1.8]       # Aggressive for moving arm segment
+        box_padding: [0.06, 0.06, 0.06]  # Large padding for moving arm
+      J3_link:
+        # Use box for J3 link arm (approximately 80x100x430mm)
+        box_scale: [1.8, 1.8, 1.8]       # Aggressive for moving arm segment
+        box_padding: [0.06, 0.06, 0.06]  # Large padding for moving arm
+      J4_link:
+        # Use cylinder for J4 wrist joint (approximately 70mm diameter, 130mm height)
+        cylinder_scale: [1.8, 1.8]       # Aggressive for moving wrist
+        cylinder_padding: [0.06, 0.06]   # Large padding for moving wrist
+      J5_link:
+        # Use cylinder for J5 wrist joint (approximately 60mm diameter, 100mm height)
+        cylinder_scale: [1.8, 1.8]       # Aggressive for moving wrist
+        cylinder_padding: [0.06, 0.06]   # Large padding for moving wrist
+      J6_link:
+        # Use cylinder for J6 end joint (approximately 50mm diameter, 80mm height)
+        cylinder_scale: [1.8, 1.8]       # Aggressive for moving end joint
+        cylinder_padding: [0.06, 0.06]   # Large padding for moving end joint
+      
+      # End-effector area - VERY AGGRESSIVE for moving parts near sensor
+      flange:
+        # Use cylinder for flange (approximately 60mm diameter, 20mm height)
+        cylinder_scale: [2.0, 2.0]      # Double the size for aggressive coverage
+        cylinder_padding: [0.08, 0.08]   # Large padding around flange
+      ee_bottom_link:
+        # Use box for end-effector base (approximately 80x60x100mm)
+        box_scale: [2.0, 2.0, 2.0]       # Double the size for aggressive coverage
+        box_padding: [0.08, 0.08, 0.08]  # Large padding around end-effector
+      gripper_finger_Link:
+        # Use box for gripper fingers (approximately 60x40x80mm)
+        box_scale: [2.5, 2.5, 2.5]       # Even larger for moving parts
+        box_padding: [0.10, 0.10, 0.10]  # Very large padding for moving parts
+      
+      # Cameras - MODERATE to AGGRESSIVE (depending on location)
+      tier4_camera_link_left:
+        box_scale: [1.5, 1.5, 1.5]       # Moderate for side cameras
+        box_padding: [0.04, 0.04, 0.04]  # Moderate padding
+      tier4_camera_link_right:
+        box_scale: [1.5, 1.5, 1.5]
+        box_padding: [0.04, 0.04, 0.04]  # Moderate padding
+      ee_camera_bottom_Link:
+        box_scale: [2.0, 2.0, 2.0]       # Aggressive for end-effector camera
+        box_padding: [0.08, 0.08, 0.08]  # Large padding for moving camera
+      D405_link:
+        box_scale: [2.0, 2.0, 2.0]       # Aggressive for end-effector camera
+        box_padding: [0.08, 0.08, 0.08]  # Large padding for D405 camera

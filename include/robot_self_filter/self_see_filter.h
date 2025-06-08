@@ -92,6 +92,8 @@ public:
       std::string box_padding_key = "self_see_links." + lname + ".box_padding";
       std::string cyl_scale_key   = "self_see_links." + lname + ".cylinder_scale";
       std::string cyl_padding_key = "self_see_links." + lname + ".cylinder_padding";
+      std::string mesh_scale_key   = "self_see_links." + lname + ".mesh_scale";
+      std::string mesh_padding_key = "self_see_links." + lname + ".mesh_padding";
       std::string padding_key     = "self_see_links." + lname + ".padding";
       std::string scale_key       = "self_see_links." + lname + ".scale";
 
@@ -108,6 +110,13 @@ public:
         std::vector<double>(), rcl_interfaces::msg::ParameterDescriptor());
       node_->get_parameter(cyl_scale_key, li.cylinder_scale);
       node_->get_parameter(cyl_padding_key, li.cylinder_padding);
+
+      node_->declare_parameter<std::vector<double>>(mesh_scale_key,
+        std::vector<double>(), rcl_interfaces::msg::ParameterDescriptor());
+      node_->declare_parameter<std::vector<double>>(mesh_padding_key,
+        std::vector<double>(), rcl_interfaces::msg::ParameterDescriptor());
+      node_->get_parameter(mesh_scale_key, li.mesh_scale);
+      node_->get_parameter(mesh_padding_key, li.mesh_padding);
 
       node_->declare_parameter<double>(padding_key, default_sphere_pad_, rcl_interfaces::msg::ParameterDescriptor());
       node_->declare_parameter<double>(scale_key, default_sphere_scale_, rcl_interfaces::msg::ParameterDescriptor());

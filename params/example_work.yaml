@@ -62,64 +62,64 @@ self_filter:
       base_footprint:
         # Use box for base footprint (approximately 400x400x100mm)
         box_scale: [1.0, 1.0, 1.0]       # Conservative scale for stationary base
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.02, 0.02, 0.02]  # Conservative padding for base
         
       # Moving arm parts - AGGRESSIVE for moving robot parts
       base_link:
         # Use cylinder for base_link (approximately 185mm diameter, 180mm height)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving arm base
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving parts
       
       # Robot arm joints - USE PRIMITIVE SHAPES for reliable filtering
       J1_link:
         # Use cylinder for J1 rotary joint (approximately 120mm diameter, 150mm height)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving joint
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving joint
       J2_link:
         # Use cylinder for J2 link arm (approximately 100x120x400mm)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving arm segment
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving arm
       J3_link:
         # Use cylinder for J3 link arm (approximately 80x100x430mm)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving arm segment
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving arm
       J4_link:
         # Use cylinder for J4 wrist joint (approximately 70mm diameter, 130mm height)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving wrist
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving wrist
       J5_link:
         # Use cylinder for J5 wrist joint (approximately 60mm diameter, 100mm height)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving wrist
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Large padding for moving wrist
       J6_link:
         # Use cylinder for J6 end joint (approximately 50mm diameter, 80mm height)
         cylinder_scale: [1.0, 1.0]       # Aggressive for moving end joint
-        cylinder_padding: [0.0, 0.0]     # No padding
+        cylinder_padding: [0.05, 0.05]   # Extra large padding for end joint near flange
       
       # End-effector area - VERY AGGRESSIVE for moving parts near sensor
       flange:
         # Use cylinder for flange (approximately 60mm diameter, 20mm height)
         cylinder_scale: [1.0, 1.0]      # Double the size for aggressive coverage
-        cylinder_padding: [0.0, 0.0]    # No padding
+        cylinder_padding: [0.05, 0.05]   # Extra large padding around flange
       ee_bottom_link:
         # Use box for end-effector base (approximately 80x60x100mm)
         box_scale: [1.0, 1.0, 1.0]       # Double the size for aggressive coverage
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.05, 0.05, 0.05]  # Large padding around end-effector
       gripper_finger_Link:
         # Use box for gripper fingers (approximately 60x40x80mm)
         box_scale: [1.0, 1.0, 1.0]       # Even larger for moving parts
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.05, 0.05, 0.05]  # Very large padding for moving parts
       
       # Cameras - MODERATE to AGGRESSIVE (depending on location)
       tier4_camera_link_left:
         box_scale: [1.0, 1.0, 1.0]       # Moderate for side cameras
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.04, 0.04, 0.04]  # Moderate padding
       tier4_camera_link_right:
         box_scale: [1.0, 1.0, 1.0]
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.04, 0.04, 0.04]  # Moderate padding
       ee_camera_bottom_Link:
         box_scale: [1.0, 1.0, 1.0]       # Aggressive for end-effector camera
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.08, 0.08, 0.08]  # Large padding for moving camera
       D405_link:
         box_scale: [1.0, 1.0, 1.0]       # Aggressive for end-effector camera
-        box_padding: [0.0, 0.0, 0.0]     # No padding
+        box_padding: [0.08, 0.08, 0.08]  # Large padding for D405 camera
